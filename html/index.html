@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>izaap_textui</title>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            overflow: hidden;
+            background: transparent;
+        }
+
+        #textui-root {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .textui-zone {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            pointer-events: none;
+        }
+
+        .textui-zone .textui-wrapper:not(:first-child) {
+            margin-top: 10px;
+        }
+
+        .textui-zone.center-bottom {
+            left: 50%;
+            bottom: 7%;
+            transform: translateX(-50%);
+            align-items: center;
+        }
+
+        .textui-zone.left-bottom {
+            left: 3%;
+            bottom: 8%;
+            align-items: flex-start;
+        }
+
+        .textui-zone.center-top {
+            left: 50%;
+            top: 4.5%;
+            transform: translateX(-50%);
+            align-items: center;
+        }
+
+        .textui-wrapper {
+            opacity: 0;
+            transform: perspective(800px) translateY(16px) translateZ(-20px) rotateX(-8deg) scale(0.96);
+            transition:
+                opacity 0.25s ease-out,
+                transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: transform, opacity;
+        }
+
+        .textui-wrapper.visible {
+            opacity: 1;
+            transform: perspective(800px) translateY(0) translateZ(0) rotateX(0deg) scale(1);
+        }
+
+        .textui-box {
+            position: relative;
+            min-width: 240px;
+            max-width: 380px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 14px 10px 4px 10px;
+            border-radius: 16px;
+            background: #0a0a0a;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.45);
+            overflow: visible;
+        }
+
+        .textui-key-wrap {
+            position: absolute;
+            left: 50%;
+            top: -30px;
+            transform: translateX(-50%);
+            width: 46px;
+            height: 46px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .textui-key-pulse,
+        .textui-key-pulse::after,
+        .textui-key-pulse::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 14px;
+            pointer-events: none;
+            will-change: transform, opacity;
+        }
+
+        .textui-key-pulse {
+            border: 2px solid rgba(248, 200, 44, 0.6);
+            animation: keyPulse 1.35s ease-out infinite;
+        }
+
+        .textui-key-pulse::before {
+            inset: -6px;
+            border-radius: 18px;
+            border: 2px solid rgba(248, 200, 44, 0.3);
+            animation: keyPulseOuter 1.35s ease-out infinite;
+        }
+
+        .textui-key-pulse::after {
+            inset: -12px;
+            border-radius: 22px;
+            border: 1px solid rgba(248, 200, 44, 0.15);
+            animation: keyPulseFar 1.35s ease-out infinite;
+        }
+
+        .textui-key {
+            position: relative;
+            z-index: 2;
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            background: #f8c82c;
+            color: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.15);
+        }
+
+        .textui-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            width: 100%;
+            margin-top: 6px;
+        }
+
+        .textui-label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.40);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .textui-text {
+            font-size: 15px;
+            color: #fff;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.3;
+            padding-bottom: 2px;
+            max-width: 100%;
+        }
+
+        @keyframes keyPulse {
+            0% { transform: scale(0.92); opacity: 0.95; }
+            65%, 100% { transform: scale(1.38); opacity: 0; }
+        }
+
+        @keyframes keyPulseOuter {
+            0% { transform: scale(0.96); opacity: 0.75; }
+            70%, 100% { transform: scale(1.62); opacity: 0; }
+        }
+
+        @keyframes keyPulseFar {
+            0% { transform: scale(1); opacity: 0.45; }
+            75%, 100% { transform: scale(1.88); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div id="textui-root">
+        <div class="textui-zone center-top" id="zone-center-top"></div>
+        <div class="textui-zone center-bottom" id="zone-center-bottom"></div>
+        <div class="textui-zone left-bottom" id="zone-left-bottom"></div>
+    </div>
+
+    <script>
+        const zones = {
+            'center-top': document.getElementById('zone-center-top'),
+            'center-bottom': document.getElementById('zone-center-bottom'),
+            'left-bottom': document.getElementById('zone-left-bottom')
+        };
+
+        const items = new Map();
+
+        function getZone(position) {
+            return zones[position] || zones['center-bottom'];
+        }
+
+        function createTextUiElement(data = {}) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'textui-wrapper';
+            wrapper.dataset.id = data.id || 'default';
+
+            wrapper.innerHTML = `
+                <div class="textui-box">
+                    <div class="textui-key-wrap">
+                        <div class="textui-key-pulse"></div>
+                        <div class="textui-key">${data.key || 'E'}</div>
+                    </div>
+
+                    <div class="textui-content">
+                        <div class="textui-label">Interaction</div>
+                        <div class="textui-text">${data.text || 'Interact'}</div>
+                    </div>
+                </div>
+            `;
+
+            return wrapper;
+        }
+
+        function setElementData(element, data = {}) {
+            const keyEl = element.querySelector('.textui-key');
+            const textEl = element.querySelector('.textui-text');
+
+            if (keyEl) {
+                keyEl.textContent = data.key || 'E';
+            }
+
+            if (textEl) {
+                textEl.textContent = data.text || 'Interact';
+            }
+        }
+
+        function showUI(data = {}) {
+            const id = String(data.id || 'default');
+            const position = data.position || 'center-bottom';
+            const zone = getZone(position);
+
+            let element = items.get(id);
+
+            if (!element) {
+                element = createTextUiElement({
+                    id,
+                    key: data.key,
+                    text: data.text
+                });
+
+                items.set(id, element);
+            } else {
+                setElementData(element, data); 
+            }
+
+            if (element.parentElement !== zone) {
+                zone.appendChild(element);
+            }
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    element.classList.add('visible');
+                });
+            });
+        }
+
+        function hideUI(data = {}) {
+            const id = String(data.id || 'default');
+            const element = items.get(id);
+
+            if (!element) return;
+
+            element.classList.remove('visible');
+
+            setTimeout(() => {
+                if (items.get(id) !== element) return;
+
+                if (element.parentElement) {
+                    element.parentElement.removeChild(element);
+                }
+
+                items.delete(id);
+            }, 250); 
+        }
+
+        function updateUI(data = {}) {
+            const id = String(data.id || 'default');
+            const element = items.get(id);
+
+            if (!element) return;
+
+            setElementData(element, data);
+
+            if (data.position) {
+                const zone = getZone(data.position);
+
+                if (element.parentElement !== zone) {
+                    zone.appendChild(element);
+                }
+            }
+        }
+
+        function forceHideAll() {
+            items.forEach((element) => {
+                if (element.parentElement) {
+                    element.parentElement.removeChild(element);
+                }
+            });
+
+            items.clear();
+        }
+
+        window.addEventListener('message', function(event) {
+            const msg = event.data;
+            if (!msg || !msg.action) return;
+
+            if (msg.action === 'show') {
+                showUI(msg.data || {});
+            } else if (msg.action === 'hide') {
+                hideUI(msg.data || {});
+            } else if (msg.action === 'update') {
+                updateUI(msg.data || {});
+            } else if (msg.action === 'forceHide') {
+                forceHideAll();
+            }
+        });
+    </script>
+</body>
+</html>
